@@ -19,7 +19,7 @@ The system involves building a glove-like wearable device capable of detecting t
 
 | Week  | Objective                                                                                                                            |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 1~2   | Mount an accelerometer on a finger and evaluate motion capture reliability. If ineffective, switch to the optical sensor.      |
+| 1~2   | Mount an accelerometer on a finger and evaluate motion capture reliability. If ineffective, switch to the optical sensor and test it.      |
 | 2~3   | Calibrate and test piezo sensors for tap detection. Build safety circuits for them.                                     |
 | 3~4   | Visualize pointer finger movement on screen when in contact with a surface. Develop a basic drawing canvas. |
 | 4~5   | Train a machine learning model to recognize drawn symbols.                                                                              |
