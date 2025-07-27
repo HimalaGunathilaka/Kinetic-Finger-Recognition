@@ -18,6 +18,9 @@ def parse_line(line):
 
     if accel:
         ax, ay, az = map(float, accel.groups())
+        az = -az
+        ax = -ax
+        ay = -ay
         print(f"Accel: X={ax:.2f}, Y={ay:.2f}, Z={az:.2f} m/s²")
         
         """
@@ -25,13 +28,13 @@ def parse_line(line):
         """
         vv.visualize_vector(vector=[ax,ay,az])
 
-    if gyro:
-        gx, gy, gz = map(float, gyro.groups())
-        print(f"Gyro:  X={gx:.2f}, Y={gy:.2f}, Z={gz:.2f} rad/s")
+    # if gyro:
+    #     gx, gy, gz = map(float, gyro.groups())
+    #     print(f"Gyro:  X={gx:.2f}, Y={gy:.2f}, Z={gz:.2f} rad/s")
 
-    if temp:
-        t = float(temp.group(1))
-        print(f"Temp:  {t:.2f} °C")
+    # if temp:
+    #     t = float(temp.group(1))
+    #     print(f"Temp:  {t:.2f} °C")
 
 def main():
     # For initializing the vector visualization
