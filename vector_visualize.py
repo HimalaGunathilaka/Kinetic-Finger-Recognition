@@ -1,6 +1,4 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 # Global variables to store the figure and axis
 fig = None
