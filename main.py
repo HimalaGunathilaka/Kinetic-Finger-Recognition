@@ -23,7 +23,7 @@ def read_piezo_serial():
         while True:
             line = ser.readline().decode('utf-8').strip()
             print(line)
-            
+
     except KeyboardInterrupt:
         print("\nStopped by user.")
     finally:

@@ -23,9 +23,9 @@ def parse_line(line):
         # ax = -ax
         # ay = -ay
         print(f"Accel: X={ax:.2f}, Y={ay:.2f}, Z={az:.2f} m/s²")
-        
+
         return np.array([ax,ay,az])
-        
+
         # """
         # For visulizing the vector
         # """
@@ -35,11 +35,11 @@ def parse_line(line):
 def main():
     # For initializing the vector visualization
     vv.initialize_graph()
-    
+
     # Initialize old acceleration
     old_acceleration = np.array([0,0,0])
 
-    
+
     try:
         with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1) as ser:
             print(f"Connected to {SERIAL_PORT} at {BAUD_RATE} baud.")
