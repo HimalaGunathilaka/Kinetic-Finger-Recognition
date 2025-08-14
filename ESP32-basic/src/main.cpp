@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-const int piezoSensors[4] = {34, 35, 32, 33};
+const int piezoSensors[4] = {5, 18, 26, 25};
 volatile int inputs[4] = {0, 0, 0, 0};
 
 void IRAM_ATTR ISR_0() { inputs[0] = 1; }

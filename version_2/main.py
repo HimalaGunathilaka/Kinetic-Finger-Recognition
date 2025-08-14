@@ -22,8 +22,12 @@ def read_piezo_serial():
     try:
         while True:
             line = ser.readline().decode('utf-8').strip()
-            print(line)
-            
+            if line:
+                values = line.split(',')
+                if len(values) == 4:
+                    values = list(map(int, values))
+                    pot = [values[2],values[3],values[2],values[0]]
+                    print("Piezo States:", pot)
     except KeyboardInterrupt:
         print("\nStopped by user.")
     finally:
