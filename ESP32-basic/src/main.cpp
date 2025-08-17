@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-const int piezoSensors[5] = {19, 18, 26, 25,33};
+const int piezoSensors[5] = {5, 18, 26, 25, 33};
 volatile int inputs[5] = {0, 0, 0, 0, 0};
 bool isTriggered = false;
 
