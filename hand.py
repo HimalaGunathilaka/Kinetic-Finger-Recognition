@@ -3,6 +3,16 @@ import mediapipe as mp
 import uinput
 import numpy as np
 
+def go_to_point(prev, now, speed):
+    """
+    Compute velocity vector from prev to now, scaled by speed.
+    """
+    direction = now - prev
+    norm = np.linalg.norm(direction) + 1e-8  # avoid div by zero
+    unit_vector = direction / norm
+    velocity = unit_vector * speed
+    return velocity
+
 # Example: screen width/height or step scaling
 step = 100  # relative movement step size
 
@@ -22,6 +32,9 @@ cap = cv2.VideoCapture(0)
 # Create the uinput device once
 device = uinput.Device([uinput.REL_X, uinput.REL_Y, uinput.BTN_LEFT])
 
+# Previous point initialization
+prev = np.zeros(2)
+ 
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -31,6 +44,7 @@ while True:
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     result = hands.process(rgb_frame)
+    
 
     if result.multi_hand_landmarks and result.multi_handedness:
         for hand_landmarks, handedness in zip(result.multi_hand_landmarks, result.multi_handedness):
@@ -39,17 +53,15 @@ while True:
             
             landmarks = np.array([[lm.x, lm.y] for lm in hand_landmarks.landmark])
             
-            go_vector = landmarks[8]-landmarks[7]
+            now = landmarks[8]
             
-            diff1 = (go_vector) / np.sqrt(go_vector[0] ** 2 + go_vector[1]**2)
+            velocity = (go_to_point(prev=prev, now=now, speed=step))       
             
+            prev = now     
 
-            # Convert normalized coordinates to relative movement
-            dx = int((go_vector[0] ) * step * 2)
-            dy = int((go_vector[1] ) * step * 2)
+            dx = int(velocity[0])
+            dy = int(velocity[1])
             
-            print(go_vector)
-
             # Move the mouse
             device.emit(uinput.REL_X, dx)
             device.emit(uinput.REL_Y, dy)

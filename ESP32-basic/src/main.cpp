@@ -1,54 +1,75 @@
 #include <Arduino.h>
+#include <Adafruit_MPU6050.h>
+#include <Wire.h>
 
-const int buttonPins[5] = {32, 27, 26, 33, 25};  // GPIOs
-volatile int inputs[5] = {0, 0, 0, 0, 0};
-bool isTriggered = false;
+#include "tap.h"
+
 #define DELAYED 300
 
-// Interrupt Service Routines (ISR)
-void IRAM_ATTR ISR_0() { inputs[0] = 1; isTriggered = true; detachInterrupt(buttonPins[0]); }
-void IRAM_ATTR ISR_1() { inputs[1] = 1; isTriggered = true; detachInterrupt(buttonPins[1]); }
-void IRAM_ATTR ISR_2() { inputs[2] = 1; isTriggered = true; detachInterrupt(buttonPins[2]); }
-void IRAM_ATTR ISR_3() { inputs[3] = 1; isTriggered = true; detachInterrupt(buttonPins[3]); }
-void IRAM_ATTR ISR_4() { inputs[4] = 1; isTriggered = true; detachInterrupt(buttonPins[4]); }
+Adafruit_MPU6050 mpu;
 
-void set_interrupts() {
-  attachInterrupt(buttonPins[0], ISR_0, RISING);
-  attachInterrupt(buttonPins[1], ISR_1, RISING);
-  attachInterrupt(buttonPins[2], ISR_2, RISING);
-  attachInterrupt(buttonPins[3], ISR_3, RISING);
-  attachInterrupt(buttonPins[4], ISR_4, RISING);
-}
-
-
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   delay(100);
 
   // Set all button pins as input with internal pull-up
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     pinMode(buttonPins[i], INPUT_PULLDOWN);
   }
 
   set_interrupts();
-}
 
-void loop() {
-  while (!isTriggered) {
-    delay(1);  // Wait until a button is pressed
+  // Initialize the accelerometer
+  if (!mpu.begin())
+  {
+    while (1)
+    {
+      delay(10);
+    }
   }
 
-  delay(DELAYED);  // Debounce delay
+  // Set gyro range to +- 250 deg/s
+  mpu.setGyroRange(MPU6050_RANGE_250_DEG);
+
+  // Set filter bandwidth to 21 Hz
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+
+  delay(100);
+}
+
+void loop()
+{
+  while (!isTriggered)
+  {
+    delay(1); // Wait until a button is pressed
+  }
+
+  delay(DELAYED); // Debounce delay
 
   isTriggered = false;
 
+  if (gyroZ)
+  {
+    attachInterrupt(buttonPins[2], ISR_2, RISING);
+  }
+  while (gyroZ)
+  {
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+    Serial.println(g.gyro.z);
+  }
+
   Serial.print("Button Inputs: ");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     Serial.print(inputs[i]);
     Serial.print(" ");
-    inputs[i] = 0;  // Reset input status
+    inputs[i] = 0; // Reset input status
   }
+
   Serial.println();
 
-  set_interrupts();  // Re-enable interrupts
+  set_interrupts(); // Re-enable interrupts
 }
