@@ -53,6 +53,14 @@ void loop()
   if (gyroZ)
   {
     attachInterrupt(buttonPins[2], ISR_2, RISING);
+
+    // Give a signal that gyro is happening
+    for (int i = 0; i < 5; i++)
+    {
+      Serial.print(inputs[i]);
+      Serial.print(" ");
+      inputs[i] = 0; // Reset input status
+    }
   }
   while (gyroZ)
   {
