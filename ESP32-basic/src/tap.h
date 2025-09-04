@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-const int buttonPins[5] = {32, 27, 26, 33, 25};  // GPIOs
+const int buttonPins[5] = {32, 33, 25, 26, 27};  // GPIOs
 volatile int inputs[5] = {0, 0, 0, 0, 0};
 volatile bool isTriggered = false;
 bool gyroZ = false;
