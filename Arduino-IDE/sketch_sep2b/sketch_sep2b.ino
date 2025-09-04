@@ -1,18 +1,3 @@
-/*
-[x] Create a BLE device
-  [] Import BLE device library
-[] Create a server
-
-[] Create Server callbacks
-
-[] Create service
-
-[] Create characteristic
-
-[] Create characteristic callbacks
-
-[]
-*/
 #include <BLEDevice.h>
 #include <BLE2901.h> // For the descriptor - A predefined one / Named descriptor
 
@@ -74,7 +59,23 @@ void setup() {
 
   pService->start();
 
-  // Start Advertising
+  // Advertising
+  // Get the advertising object
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+
+  BLEAdvertisementData advertisementData;
+  advertisementData.setName(DEVICE_NAME);
+  advertisementData.setManufacturerData("Chinese Factory");
+
+  BLEAdvertisementData scanResponseData;
+  scanResponseData.setName("Extra Scan data");
+
+  pAdvertising->setAdvertisementData(advertisementData);
+  pAdvertising->setScanResponseData(scanResponseData);
+
+  pAdvertising->addServiceUUID(SERVICE_1_UUID);
+  pAdvertising->setScanResponse(true);
+
   BLEDevice::startAdvertising();
 
 }
