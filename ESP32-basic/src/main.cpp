@@ -1,83 +1,37 @@
 #include <Arduino.h>
-#include <Adafruit_MPU6050.h>
-#include <Wire.h>
-
+#include "ble.h"
 #include "tap.h"
 
 #define DELAYED 300
+String msg = "";
 
-Adafruit_MPU6050 mpu;
+BLEManager ble;
 
 void setup()
 {
   Serial.begin(115200);
-  delay(100);
-
-  // Set all button pins as input with internal pull-up
-  for (int i = 0; i < 5; i++)
-  {
-    pinMode(buttonPins[i], INPUT_PULLDOWN);
-  }
-
+  ble.init("ESP32-K");
   set_interrupts();
-
-  // Initialize the accelerometer
-  if (!mpu.begin())
-  {
-    while (1)
-    {
-      delay(10);
-    }
-  }
-
-  // Set gyro range to +- 250 deg/s
-  mpu.setGyroRange(MPU6050_RANGE_250_DEG);
-
-  // Set filter bandwidth to 21 Hz
-  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
-
-  delay(100);
+  set_pins();
 }
 
 void loop()
 {
   while (!isTriggered)
   {
-    delay(1); // Wait until a button is pressed
+    delay(1);
   }
-
-  delay(DELAYED); // Debounce delay
-
-  isTriggered = false;
-
-  if (gyroZ)
-  {
-    attachInterrupt(buttonPins[2], ISR_2, RISING);
-
-    // Give a signal that gyro is happening
-    for (int i = 0; i < 5; i++)
-    {
-      Serial.print(inputs[i]);
-      Serial.print(" ");
-      inputs[i] = 0; // Reset input status
-    }
-  }
-  while (gyroZ)
-  {
-    sensors_event_t a, g, temp;
-    mpu.getEvent(&a, &g, &temp);
-    Serial.println(g.gyro.z);
-  }
-
-  Serial.print("Button Inputs: ");
+  delay(DELAYED); // Wait until all relevant buttons are pressed
+  
+  Serial.print("Button pressed!");
+  msg = "";
   for (int i = 0; i < 5; i++)
   {
-    Serial.print(inputs[i]);
-    Serial.print(" ");
-    inputs[i] = 0; // Reset input status
+    msg+=String(inputs[i]);
+    inputs[i] = 0;
   }
+  ble.notify(msg.c_str());
+  set_interrupts();
 
-  Serial.println();
-
-  set_interrupts(); // Re-enable interrupts
+  isTriggered = false;
 }

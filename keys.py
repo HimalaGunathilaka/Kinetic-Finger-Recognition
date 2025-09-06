@@ -28,6 +28,6 @@ keys = {
     '00101': 'z',
     '11111' : 'space',
     '10011' : 'enter',
-    '11100' : 'shift',
+    '11100' : 'capslock',
     '01110' : 'backspace'
 }

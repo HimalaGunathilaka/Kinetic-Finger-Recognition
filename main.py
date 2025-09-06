@@ -1,9 +1,10 @@
-import serial
-import serial.tools.list_ports
-import time
-import re
+import asyncio
 import uinput
-from keys import keys  # your signal-to-key mapping
+from bleak import BleakScanner, BleakClient
+from keys import keys
+
+
+CHAR_UUID = "abcdefab-1234-5678-1234-abcdefabcdef"
 
 # UInput key lookup table
 key_map = {
@@ -35,61 +36,34 @@ key_map = {
     'z': uinput.KEY_Z,
     'enter': uinput.KEY_ENTER,
     'space': uinput.KEY_SPACE,
+    'capslock': uinput.KEY_CAPSLOCK,
     'backspace': uinput.KEY_BACKSPACE
 }
 
-def find_esp32_port():
-    ports = serial.tools.list_ports.comports()
-    for port in ports:
-        if "USB" in port.description or "UART" in port.description:
-            return port.device
-    return None
+# Create a virtual keyboard device
+device = uinput.Device(list(key_map.values()))
 
-def main():
-    port = find_esp32_port()
-    if not port:
-        print("ESP32 not found.")
+# Handle BLE notifications
+def handler(sender, data):
+    key_str = data.decode().strip().lower()
+    print("Received:", key_str)
+    if key_str in keys:
+        device.emit_click(key_map[keys[key_str]])
+        print(f"Emitted key: {key_str}")
+    else:
+        print(f"⚠ Unknown key: {key_str}")
+
+async def main():
+    print("Scanning for ESP32...")
+    device_found = await BleakScanner.find_device_by_name("ESP32-K")
+    if not device_found:
+        print("ESP32 not found!")
         return
 
-    print(f"Connecting to ESP32 on {port}...")
-    ser = serial.Serial(port, 115200, timeout=1)
-    time.sleep(2)
+    async with BleakClient(device_found) as client:
+        print("Connected to ESP32")
+        await client.start_notify(CHAR_UUID, handler)
+        print("Listening for notifications...")
+        await asyncio.Future()  # keep running
 
-    shift_next = False
-
-    # Define all possible events for uinput device
-    events = list(set(key_map.values()) | {uinput.KEY_LEFTSHIFT})
-    device = uinput.Device(events)
-
-    try:
-        while True:
-            line = ser.readline().decode('utf-8').strip()
-            if line:
-                signal = ''.join(re.findall(r'\d+', line))
-                if signal in keys:
-                    word = keys[signal]
-                    if word == 'shift':
-                        shift_next = True
-                        continue
-
-                    key = key_map.get(word.lower())
-                    if not key:
-                        print(f"[!] Unknown key mapping: '{word}'")
-                        continue
-
-                    if shift_next and word.isalpha():
-                        device.emit_combo([uinput.KEY_LEFTSHIFT, key])
-                        shift_next = False
-                    else:
-                        device.emit_click(key)
-
-                    print(f"[+] Sent key: {word}")
-                else:
-                    print(f"[-] Unknown signal: {signal}")
-    except Exception as e:
-        print(f"[!] Error: {e}")
-    finally:
-        ser.close()
-
-if __name__ == "__main__":
-    main()
+asyncio.run(main())
