@@ -21,12 +21,10 @@ void loop()
   {
     delay(1);
   }
-
   delay(DELAYED); // Wait until all relevant buttons are pressed
   
   Serial.print("Button pressed!");
   msg = "";
-  
   for (int i = 0; i < 5; i++)
   {
     msg+=String(inputs[i]);
