@@ -10,7 +10,7 @@ float gyroThreshold = 2;
 // When detect movement delay the all functionalities for this number of milliseconds
 String output = "";
 // Obiviously other than ISR
-int trapDelay = 800;
+int trapDelay = 750;
 
 // Max value by gyro of the mpu
 float maxVal = .0f;
