@@ -37,7 +37,8 @@ key_map = {
     'enter': uinput.KEY_ENTER,
     'space': uinput.KEY_SPACE,
     'capslock': uinput.KEY_CAPSLOCK,
-    'backspace': uinput.KEY_BACKSPACE
+    'backspace': uinput.KEY_BACKSPACE,
+    'delete' : uinput.KEY_DELETE
 }
 
 # Create a virtual keyboard device
