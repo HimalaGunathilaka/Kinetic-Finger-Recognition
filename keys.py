@@ -26,8 +26,23 @@ keys = {
     '01011': 'x',
     '10001': 'y',
     '00101': 'z',
-    '11111' : 'space',
-    '10011' : 'enter',
-    '11100' : 'capslock',
-    '01110' : 'backspace'
+    
+    '1' : 'capslock',
+    '01110' : 'space',
+    '2' : 'enter',
+    '3' : 'delete',
+    '4' : 'backspace'
 }
+
+
+# Gyro-directions
+"""
+    x+ --> 1
+    x- --> 2
+
+    y+ --> 3
+    y- --> 4
+
+    z (clockwise) --> 6
+    z (anticlockwise) --> 5
+"""
