@@ -1,131 +1,105 @@
 import serial
+import re
 import numpy as np
 from ahrs.filters import Madgwick
-from ahrs.common.orientation import q2euler
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from collections import deque
 import time
 
-# Serial config
+# ----------------------------
+# Configuration
+# ----------------------------
 SERIAL_PORT = '/dev/ttyUSB0'
 BAUD_RATE = 115200
+SAMPLE_WINDOW = 100  # initial idle samples for gravity
+dt = 0.02            # IMU sample interval in seconds
 
+# ----------------------------
+# Queues for averaging initial gravity
+# ----------------------------
+ax_queue = deque(maxlen=SAMPLE_WINDOW)
+ay_queue = deque(maxlen=SAMPLE_WINDOW)
+az_queue = deque(maxlen=SAMPLE_WINDOW)
+
+# ----------------------------
 # Madgwick filter
-madgwick = Madgwick()
+# ----------------------------
+madgwick = Madgwick(Dt=dt)
 q = np.array([1.0, 0.0, 0.0, 0.0])  # initial quaternion
 
-# Integration variables
-velocity = np.zeros(3)
-position = np.zeros(3)
+# ----------------------------
+# Globals for sensor values
+# ----------------------------
+ax = ay = az = gx = gy = gz = None
 
-# Time tracking
-last_time = None
-
-# For 3D plotting
-history = deque(maxlen=500)
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-def update_plot():
-    ax.clear()
-    data = np.array(history)
-    if len(data) > 0:
-        ax.plot(data[:, 0], data[:, 1], data[:, 2], color='blue')
-        ax.scatter(data[-1, 0], data[-1, 1], data[-1, 2], color='red')
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_title("Estimated Position from MPU6050")
-    plt.pause(0.01)
-    
-def quaternion_to_matrix(q):
-    """
-    Convert quaternion to rotation matrix.
-    Quaternion format: q = [w, x, y, z]
-    """
+# ----------------------------
+# Helper functions
+# ----------------------------
+def quaternion_to_rotation_matrix(q):
     w, x, y, z = q
     R = np.array([
-        [1 - 2*(y**2 + z**2),     2*(x*y - z*w),       2*(x*z + y*w)],
-        [2*(x*y + z*w),           1 - 2*(x**2 + z**2), 2*(y*z - x*w)],
-        [2*(x*z - y*w),           2*(y*z + x*w),       1 - 2*(x**2 + y**2)]
+        [1-2*(y**2+z**2), 2*(x*y - z*w), 2*(x*z + y*w)],
+        [2*(x*y + z*w), 1-2*(x**2+z**2), 2*(y*z - x*w)],
+        [2*(x*z - y*w), 2*(y*z + x*w), 1-2*(x**2+y**2)]
     ])
     return R
 
-def parse_line(line):
-    # Expected line format:
-    # accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,timestamp
-    parts = line.split(',')
-    if len(parts) < 7:
-        return None, None
-    try:
-        ax_, ay_, az_ = map(float, parts[0:3])
-        gx_, gy_, gz_ = map(float, parts[3:6])
-        # timestamp = float(parts[6])  # If you want to use Arduino timestamp
-        # Convert gyro from degrees/s to radians/s
-        gyro_rad = np.radians([gx_, gy_, gz_])
-        accel_m_s2 = np.array([ax_, ay_, az_]) * 9.81 / 8.0  # Because Arduino range is ±8g
-        # Note: The Arduino MPU6050 readings are in g units? Check if scaling is needed.
-        return accel_m_s2, gyro_rad
-    except ValueError:
-        return None, None
+def extract_line(line):
+    """Extract ax, ay, az, gx, gy, gz from serial line."""
+    global ax, ay, az, gx, gy, gz
+    if not line:
+        return False
 
-def main():
-    global q, velocity, position, last_time
+    pattern = re.compile(
+        r"ax:\s*(-?\d+\.?\d*)\s*ay[,:]?\s*(-?\d+\.?\d*)\s*az[,:]?\s*(-?\d+\.?\d*)\s*gx[,:]?\s*(-?\d+\.?\d*)\s*gy[,:]?\s*(-?\d+\.?\d*)\s*gz[,:]?\s*(-?\d+\.?\d*)"
+    )
+    match = pattern.search(line)
+    if match:
+        ax, ay, az, gx, gy, gz = map(float, match.groups())
+        return True
+    return False
 
-    try:
-        with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1) as ser:
-            print(f"Connected to {SERIAL_PORT} at {BAUD_RATE} baud.")
-            plt.ion()
+# ----------------------------
+# Main Loop
+# ----------------------------
+with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1) as ser:
+    print("Collecting initial idle samples to determine gravity...")
+    gravity_initialized = False
+    point_down = None
 
-            while True:
-                try:
-                    velocity = np.zeros(3)
-                    position = np.zeros(3)
-                    line = ser.readline().decode('utf-8', errors='ignore').strip()
-                    if not line:
-                        continue
-                    
-                    accel, gyro = parse_line(line)
-                    if accel is None or gyro is None:
-                        continue
+    while True:
+        try:
+            line = ser.readline().decode('utf-8', errors='ignore').strip()
+            if extract_line(line):
+                # Collect initial samples
+                if not gravity_initialized:
+                    # print(len(ax_queue))
+                    ax_queue.append(ax)
+                    ay_queue.append(ay)
+                    az_queue.append(az)
+                    if len(ax_queue) == SAMPLE_WINDOW:
+                        # Compute initial gravity vector
+                        gravity = np.array([
+                            sum(ax_queue)/SAMPLE_WINDOW,
+                            sum(ay_queue)/SAMPLE_WINDOW,
+                            sum(az_queue)/SAMPLE_WINDOW
+                        ])
+                        point_down = gravity / np.linalg.norm(gravity)
+                        gravity_initialized = True
+                        print("Initial gravity vector (unit):", point_down)
+                        print("Starting real-time tracking...\n")
+                else:
+                    # Update orientation with Madgwick filter
+                    q = madgwick.updateIMU(q, gyr=np.array([gx, gy, gz]),
+                                           acc=np.array([ax, ay, az]))
+                    R = quaternion_to_rotation_matrix(q)
+                    g_current = R @ point_down
+                    print("Current down vector:", np.round(g_current, 3))
+            else:
+                # Optional: print if line is not parsed
+                print("Skipping unrecognized line:", line)
 
-                    # Time step
-                    current_time = time.time()
-                    if last_time is None:
-                        last_time = current_time
-                        continue
-                    dt = current_time - last_time
-                    last_time = current_time
+            time.sleep(dt)  # maintain sample rate
 
-                    # Update orientation
-                    q = madgwick.updateIMU(q, gyro, accel)
-
-                    # Remove gravity component
-                    g = np.array([0.0, 0.0, 9.81])  # gravity vector
-                    # Rotate gravity to sensor frame
-                    R = quaternion_to_matrix(q)
-                    gravity = R.T @ g
-
-                    linear_accel = accel - gravity  # in m/s²
-
-                    # Integrate to get velocity and position
-                    print(linear_accel)
-                    velocity += linear_accel * dt
-                    position += velocity * dt
-
-                    history.append(position.copy())
-                    update_plot()
-
-                except UnicodeDecodeError:
-                    continue
-
-    except serial.SerialException as e:
-        print(f"Serial connection error: {e}")
-    except KeyboardInterrupt:
-        print("Exiting...")
-        plt.ioff()
-        plt.show()
-
-if __name__ == "__main__":
-    main()
+        except KeyboardInterrupt:
+            print("\nStopping tracking...")
+            break
