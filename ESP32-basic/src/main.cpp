@@ -1,47 +1,32 @@
+#include <BleKeyboard.h>
 #include <Arduino.h>
 
-#include "ble.h"
-#include "tap.h"
-#include "mpu.h"
+BleKeyboard bleKeyboard;
 
-#define DELAYED 300
-String msg = "";
-
-BLEManager ble;
-
-void setup()
-{
+void setup() {
   Serial.begin(115200);
-  ble.init("ESP32-K");
-  init_mpu();
-  set_interrupts();
-  set_pins();
+  Serial.println("Starting BLE work!");
+  bleKeyboard.begin();
+  if(bleKeyboard.isConnected()) {
+    Serial.println("Sending 'Hello world'...");
+    bleKeyboard.print("Hello world");
+  
+    delay(1000);
+  
+    Serial.println("Sending Enter key...");
+    bleKeyboard.write(KEY_RETURN);
+  
+    delay(1000);
+  
+    Serial.println("Sending Play/Pause media key...");
+    bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
+  
+    delay(1000);
+  }
 }
 
-void loop()
-{
-  while (!isTriggered)
-  {
-    delay(1);
-    mpu_loop();
-    // Check against threshold of mpu
-    if(abs(maxVal) > gyroThreshold){
-        ble.notify(output.c_str());
-        delay(trapDelay);
-    }
-    output ='0';
-  }
-  delay(DELAYED); // Wait until all relevant buttons are pressed
-  
-  Serial.print("Button pressed!");
-  msg = "";
-  for (int i = 0; i < 5; i++)
-  {
-    msg+=String(inputs[i]);
-    inputs[i] = 0;
-  }
-  ble.notify(msg.c_str());
-  set_interrupts();
+void loop() {
 
-  isTriggered = false;
+  Serial.println("Waiting 5 seconds...");
+  delay(5000);
 }
