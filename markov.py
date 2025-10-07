@@ -26,19 +26,37 @@ def train_markov_model(text, existing_model=None):
         existing_model = make_markov()
     return add_sequence(text, existing_model)
 
-def save_binary_model(prob_model, filepath="markov.bin"):
-    """
-    Save normalized model as a binary file:
-    - 2 bytes: context
-    - 1 byte: next char
-    - 4 bytes: probability (float)
+def save_binary_model(prob_model, filepath="markov.bin", legacy_padded=False):
+    """Save normalized model to binary.
+
+    Record layout (default, packed 7 bytes):
+        offset  size  desc
+        0       2     context (2 ASCII chars)
+        2       1     next char (ASCII)
+        3       4     probability float32 (little-endian)
+
+    If legacy_padded=True, writes 8-byte records with one padding byte after the 3 chars
+    (matches earlier C++ struct with implicit alignment). This is retained only
+    for backward compatibility/testing.
     """
     with open(filepath, "wb") as f:
         for context, next_chars in prob_model.items():
-            for c, prob in next_chars.items():
-                # pack 2 chars + 1 char + float = 2+1+4 = 7 bytes
-                data = struct.pack('3sf', context.encode('utf-8') + c.encode('utf-8'), prob)
-                f.write(data)
+            if len(context) != 2:
+                # skip malformed contexts
+                continue
+            c0, c1 = context
+            for nxt, prob in next_chars.items():
+                if not nxt:
+                    continue
+                nxt_char = nxt[0]
+                if legacy_padded:
+                    # 3 chars + pad + float
+                    f.write(struct.pack('<3sxf', bytes(c0 + c1 + nxt_char, 'ascii'), float(prob)))
+                else:
+                    # manual assembly for strict 7 bytes
+                    f.write(bytes(c0 + c1 + nxt_char, 'ascii'))
+                    f.write(struct.pack('<f', float(prob)))
+
 
 def sample_next(prob_model, context):
     if context not in prob_model:

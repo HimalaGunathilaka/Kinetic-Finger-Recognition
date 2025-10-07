@@ -1,32 +1,28 @@
-#include <BleKeyboard.h>
-#include <Arduino.h>
-
-BleKeyboard bleKeyboard;
+#include "FS.h"
+#include "SPIFFS.h"
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Starting BLE work!");
-  bleKeyboard.begin();
-  if(bleKeyboard.isConnected()) {
-    Serial.println("Sending 'Hello world'...");
-    bleKeyboard.print("Hello world");
-  
-    delay(1000);
-  
-    Serial.println("Sending Enter key...");
-    bleKeyboard.write(KEY_RETURN);
-  
-    delay(1000);
-  
-    Serial.println("Sending Play/Pause media key...");
-    bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
-  
-    delay(1000);
+  if (!SPIFFS.begin(true)) {
+    Serial.println("SPIFFS Mount Failed!");
+    return;
   }
+
+  Serial.println("SPIFFS mounted successfully.");
+
+  File file = SPIFFS.open("/test.txt", "r");
+  if (!file) {
+    Serial.println("Failed to open /test.txt");
+    return;
+  }
+
+  Serial.println("Reading file contents:\n");
+  while (file.available()) {
+    Serial.write(file.read());
+  }
+
+  file.close();
+  Serial.println("\n\n--- File read complete ---");
 }
 
-void loop() {
-
-  Serial.println("Waiting 5 seconds...");
-  delay(5000);
-}
+void loop() {}
