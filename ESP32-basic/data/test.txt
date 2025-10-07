@@ -1,6 +1,0 @@
-Hello ESP32!
-This is a test file stored in SPIFFS.
-If you can read this, your SPIFFS setup works!
-Line 1: The quick brown fox jumps over the lazy dog.
-Line 2: 1234567890
-End of file.

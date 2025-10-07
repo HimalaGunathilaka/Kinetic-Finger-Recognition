@@ -6,3 +6,7 @@ The hand is the most frequently used organ of the body for performing fine tasks
 
 The system involves building a glove-like wearable device capable of detecting taps and finger movements on a surface.
 
+# Upload file to ESP32 
+```bash
+pio run --target uploadfs
+```
