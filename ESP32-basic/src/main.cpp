@@ -1,47 +1,48 @@
 #include <Arduino.h>
-
-#include "ble.h"
+#include <BleKeyboard.h>
 #include "tap.h"
 #include "mpu.h"
+#include "keys.h"
 
 #define DELAYED 300
-String msg = "";
 
-BLEManager ble;
+BleKeyboard bleKeyboard;
 
 void setup()
 {
   Serial.begin(115200);
-  ble.init("ESP32-K");
-  init_mpu();
+  Serial.println("Starting BLE work!");
+  bleKeyboard.begin();
+  // init_mpu();
   set_interrupts();
   set_pins();
 }
 
 void loop()
 {
-  while (!isTriggered)
+  if (bleKeyboard.isConnected())
   {
-    delay(1);
-    mpu_loop();
-    // Check against threshold of mpu
-    if(abs(maxVal) > gyroThreshold){
-        ble.notify(output.c_str());
-        delay(trapDelay);
+    while (!isTriggered)
+    {
+      delay(1);
     }
-    output ='0';
-  }
-  delay(DELAYED); // Wait until all relevant buttons are pressed
-  
-  Serial.print("Button pressed!");
-  msg = "";
-  for (int i = 0; i < 5; i++)
-  {
-    msg+=String(inputs[i]);
-    inputs[i] = 0;
-  }
-  ble.notify(msg.c_str());
-  set_interrupts();
+    delay(DELAYED);
 
-  isTriggered = false;
+    String lookup ="";
+
+    // Concatanate the interrupts inputs
+    for(int i = 0; i <5; i++){
+      lookup += String(inputs[i]);
+      inputs[i] = 0;
+    }
+
+    auto it = keys.find(lookup.c_str());
+    String output = (it != keys.end()) ? String(it->second.c_str()) : "";
+
+    bleKeyboard.print(output);
+    Serial.println(output);
+
+    set_interrupts();
+    isTriggered = false;
+  }
 }
