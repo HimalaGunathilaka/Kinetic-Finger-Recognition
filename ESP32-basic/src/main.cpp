@@ -117,6 +117,15 @@ void loop() {
         else if (lookup == "00011") {
             tapKey(KEY_DELETE);
         }
+        else if (lookup == "01110") {
+          bleKeyboard.print(" ");
+        }
+        else if (lookup == "11100") {
+          bleKeyboard.print(".");
+        }
+        else if (lookup == "11110") {
+          bleKeyboard.print(",");
+        }
         else {
             Serial.print("No match for lookup: ");
             Serial.println(lookup);

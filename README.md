@@ -9,4 +9,26 @@ The system involves building a glove-like wearable device capable of detecting t
 
 ```bash
 sudo env "PATH=$PATH" python3 main.py
-```((z((v))))
+```
+---
+# Keybindings
+```bash
+Gyroscope
+    CapsLock -----> z+
+    Enter --------> z-
+
+    Next keys -------> Anti-Clockwise
+    Previous keys ---> Clockwise
+
+    LeftArrow ----> Roll y-
+    RightArrow ---> Roll y+
+
+Taps finger combinations
+    Backspace -----> 11000
+    Delete --------> 00011
+
+    Space ---------> 01110
+    . -------------> 11100
+    , -------------> 11110
+
+```
