@@ -6,3 +6,7 @@ The hand is the most frequently used organ of the body for performing fine tasks
 
 The system involves building a glove-like wearable device capable of detecting taps and finger movements on a surface.
 
+
+```bash
+sudo env "PATH=$PATH" python3 main.py
+```((z((v))))

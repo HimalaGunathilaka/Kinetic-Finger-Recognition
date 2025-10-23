@@ -1,3 +1,6 @@
+#ifndef MPU_H
+#define MPU_H
+
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
@@ -6,11 +9,11 @@ Adafruit_MPU6050 mpu;
 
 // Threshold for detecting rotation (rad/s)
 float gyroThreshold = 2;
-// output that should be sent
+// gyro_output that should be sent
 // When detect movement delay the all functionalities for this number of milliseconds
-String output = "";
+int gyro_output = 1;
 // Obiviously other than ISR
-int trapDelay = 750;
+int trapDelay = 500;
 
 // Max value by gyro of the mpu
 float maxVal = .0f;
@@ -40,20 +43,40 @@ void mpu_loop()
 
     // Capture the maximum value by the mpu
     maxVal = gx;
-    if (gx > 0){ output = "1"; }
-    else{ output = "2"; }
+    if (gx > 0)
+    {
+        gyro_output = 1;
+    }
+    else
+    {
+        gyro_output = 2;
+    }
 
     if (abs(gy) > abs(maxVal))
     {
         maxVal = gy;
-        if (gx > 0){ output = "3"; }
-        else{ output = "4"; }
+        if (gx > 0)
+        {
+            gyro_output = 3;
+        }
+        else
+        {
+            gyro_output = 4;
+        }
     }
 
     if (abs(gz) > abs(maxVal))
     {
         maxVal = gz;
-        if (gx > 0){ output = "5"; }
-        else{ output = "6"; }
+        if (gx > 0)
+        {
+            gyro_output = 5;
+        }
+        else
+        {
+            gyro_output = 6;
+        }
     }
 }
+
+#endif

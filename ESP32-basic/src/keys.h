@@ -32,17 +32,13 @@ std::map<std::string, std::string> keys = {
   {"01011", "x"},
   {"10001", "y"},
   {"00101", "z"},
-  {"01110", "space"}
+  {"01110", " "}
 };
 
-// Special keys lookup
-std::map<std::string, std::string> specialKeys = {
-  {"1", "capslock"},
-  {"2", "enter"},
-  {"3", "delete"},
-  {"4", "backspace"}
+std::string order[30] = {
+  "e", "t", "a", "o", "i", "n", "s", "r", "h", "d",
+  "l", "u", "c", "m", "f", "y", "w", "g", "p", "b",
+  "v", "k", "x", "q", "j", "z", "(", ")","-","+"
 };
-
-
 
 #endif

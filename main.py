@@ -1,70 +1,56 @@
-import asyncio
-import uinput
-from bleak import BleakScanner, BleakClient
-from keys import keys
+from pynput import keyboard
+import tkinter as tk
 
+from keys import key_pot,keys
 
-CHAR_UUID = "abcdefab-1234-5678-1234-abcdefabcdef"
+last_key = "None"
+head = 0
 
-# UInput key lookup table
-key_map = {
-    'a': uinput.KEY_A,
-    'b': uinput.KEY_B,
-    'c': uinput.KEY_C,
-    'd': uinput.KEY_D,
-    'e': uinput.KEY_E,
-    'f': uinput.KEY_F,
-    'g': uinput.KEY_G,
-    'h': uinput.KEY_H,
-    'i': uinput.KEY_I,
-    'j': uinput.KEY_J,
-    'k': uinput.KEY_K,
-    'l': uinput.KEY_L,
-    'm': uinput.KEY_M,
-    'n': uinput.KEY_N,
-    'o': uinput.KEY_O,
-    'p': uinput.KEY_P,
-    'q': uinput.KEY_Q,
-    'r': uinput.KEY_R,
-    's': uinput.KEY_S,
-    't': uinput.KEY_T,
-    'u': uinput.KEY_U,
-    'v': uinput.KEY_V,
-    'w': uinput.KEY_W,
-    'x': uinput.KEY_X,
-    'y': uinput.KEY_Y,
-    'z': uinput.KEY_Z,
-    'enter': uinput.KEY_ENTER,
-    'space': uinput.KEY_SPACE,
-    'capslock': uinput.KEY_CAPSLOCK,
-    'backspace': uinput.KEY_BACKSPACE,
-    'delete' : uinput.KEY_DELETE
-}
+def on_press(key):
+    global last_key, head
+    try:
+        last_key = key.char  # letter, number, symbol
+    except AttributeError:
+        last_key = str(key)  # special keys like shift, enter
+        
+    # Handle control keys immediately when pressed
+    if last_key == "Key.ctrl":
+        head -= 1
+        if head < 0: head = 5
+        print("ctrl left was pressed!")
+        
+    elif last_key == "Key.ctrl_r":
+        head += 1
+        head %= 6
+        print("ctrl right was pressed!")
 
-# Create a virtual keyboard device
-device = uinput.Device(list(key_map.values()))
+# Start keyboard listener
+listener = keyboard.Listener(on_press=on_press)
+listener.start()
 
-# Handle BLE notifications
-def handler(sender, data):
-    key_str = data.decode().strip().lower()
-    print("Received:", key_str)
-    if key_str in keys:
-        device.emit_click(key_map[keys[key_str]])
-        print(f"Emitted key: {key_str}")
+# Tkinter window
+root = tk.Tk()
+root.title("Typing Pet 🐾")
+root.geometry("250x100")
+root.attributes("-topmost", True)
+root.attributes("-alpha", 0.9)
+root.resizable(False, False)
+
+label = tk.Label(root, text="Press any key...", font=("Segoe UI", 12))
+label.pack(expand=True)
+
+def update_label():
+    # label.config(text=f"Last key pressed: {last_key}")
+    
+    global head
+            
+    if last_key in key_pot:
+        head = key_pot[last_key]
+        label.config(text=f"{keys[head*5]} {keys[head*5 +1]} {keys[head*5 +2]} {keys[head*5+3]} {keys[head*5+4]}")
     else:
-        print(f"⚠ Unknown key: {key_str}")
+        # For control keys and other special keys, just show the current head
+        label.config(text=f"{keys[head*5]} {keys[head*5 +1]} {keys[head*5 +2]} {keys[head*5+3]} {keys[head*5+4]}")
+    root.after(100, update_label)
 
-async def main():
-    print("Scanning for ESP32...")
-    device_found = await BleakScanner.find_device_by_name("ESP32-K")
-    if not device_found:
-        print("ESP32 not found!")
-        return
-
-    async with BleakClient(device_found) as client:
-        print("Connected to ESP32")
-        await client.start_notify(CHAR_UUID, handler)
-        print("Listening for notifications...")
-        await asyncio.Future()  # keep running
-
-asyncio.run(main())
+update_label()
+root.mainloop()

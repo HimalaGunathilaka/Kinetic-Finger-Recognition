@@ -22,6 +22,11 @@ void set_interrupts() {
   attachInterrupt(buttonPins[2], ISR_2, RISING);
   attachInterrupt(buttonPins[3], ISR_3, RISING);
   attachInterrupt(buttonPins[4], ISR_4, RISING);
+
+  // reinitialize the list
+  for(int i=0;i++;i<5){
+    inputs[i] = 0;
+  }
 }
 
 void set_pins()
