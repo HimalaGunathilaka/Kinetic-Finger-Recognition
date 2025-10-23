@@ -8,7 +8,7 @@ def handler(sender, data):
 
 async def main():
     print("Scanning for ESP32...")
-    device = await BleakScanner.find_device_by_name("ESP32-K")
+    device = await BleakScanner.find_device_by_name("ESP32 Keyboard")
     if not device:
         print("ESP32 not found!")
         return
