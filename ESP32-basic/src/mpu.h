@@ -5,78 +5,75 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 
+// Global MPU6050 instance
 Adafruit_MPU6050 mpu;
 
-// Threshold for detecting rotation (rad/s)
-float gyroThreshold = 2;
-// gyro_output that should be sent
-// When detect movement delay the all functionalities for this number of milliseconds
-int gyro_output = 1;
-// Obiviously other than ISR
-int trapDelay = 500;
+// Configuration constants
+const float GYRO_THRESHOLD = 2.0f;        // Threshold for detecting rotation (rad/s)
+const int TRAP_DELAY = 500;               // Delay in milliseconds when movement is detected
 
-// Max value by gyro of the mpu
-float maxVal = .0f;
+// Global variables
+int gyro_output = 1;                      // Gyro output value to be sent
+float maxVal = 0.0f;                      // Maximum value detected by gyro
 
-void init_mpu()
-{
-    if (!mpu.begin())
-    {
+/**
+ * Initialize the MPU6050 sensor
+ */
+void init_mpu() {
+    if (!mpu.begin()) {
         Serial.println("Failed to find MPU6050 chip");
-        while (1)
+        while (1) {
             delay(10);
+        }
     }
+    
     Serial.println("MPU6050 Found!");
-
+    
+    // Configure sensor settings
     mpu.setGyroRange(MPU6050_RANGE_250_DEG);
     mpu.setFilterBandwidth(MPU6050_BAND_10_HZ);
 }
 
-void mpu_loop()
-{
+/**
+ * Main MPU6050 processing loop
+ * Reads gyroscope data and determines movement direction
+ */
+void mpu_loop() {
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
 
+    // Extract gyroscope values
     float gx = g.gyro.x;
     float gy = g.gyro.y;
     float gz = g.gyro.z;
 
-    // Capture the maximum value by the mpu
+    // Initialize with X-axis values
     maxVal = gx;
-    if (gx > 0)
-    {
-        gyro_output = 1;
-    }
-    else
-    {
-        gyro_output = 2;
-    }
+    gyro_output = (gx > 0) ? 1 : 2;
 
-    if (abs(gy) > abs(maxVal))
-    {
+    // Check if Y-axis has larger magnitude
+    if (abs(gy) > abs(maxVal)) {
         maxVal = gy;
-        if (gx > 0)
-        {
-            gyro_output = 3;
-        }
-        else
-        {
-            gyro_output = 4;
-        }
+        gyro_output = (gy > 0) ? 3 : 4;
     }
 
-    if (abs(gz) > abs(maxVal))
-    {
+    // Check if Z-axis has the largest magnitude
+    if (abs(gz) > abs(maxVal)) {
         maxVal = gz;
-        if (gx > 0)
-        {
-            gyro_output = 5;
-        }
-        else
-        {
-            gyro_output = 6;
-        }
+        gyro_output = (gz > 0) ? 5 : 6;
     }
 }
 
 #endif
+
+/*
+    x+ --> 1
+    x- --> 2
+
+    y+ --> 3
+    y- --> 4
+
+    z (clockwise) --> 6
+    z (anticlockwise) --> 5
+
+*/
